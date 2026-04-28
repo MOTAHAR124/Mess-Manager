@@ -1,0 +1,54 @@
+services:
+  # PostgreSQL Database
+  postgres:
+    image: postgres:15
+    container_name: meso-postgres
+    environment:
+      POSTGRES_USER: meso_user
+      POSTGRES_PASSWORD: meso_password
+      POSTGRES_DB: meso_db
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - meso-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U meso_user -d meso_db"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # NestJS Backend
+  backend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: meso-backend
+    environment:
+      NODE_ENV: development
+      DATABASE_URL: postgresql://meso_user:meso_password@postgres:5432/meso_db
+      JWT_SECRET: your_jwt_secret_min_32_chars
+      GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID}
+      GOOGLE_CLIENT_SECRET: ${GOOGLE_CLIENT_SECRET}
+      GOOGLE_CALLBACK_URL: http://localhost:3000/api/v1/auth/google/callback
+      PORT: 3000
+      CORS_ORIGIN: http://localhost:5173
+    ports:
+      - "3000:3000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    volumes:
+      - ./src:/app/src
+      - ./node_modules:/app/node_modules
+    networks:
+      - meso-network
+    command: npm run start:dev
+
+volumes:
+  postgres_data:
+
+networks:
+  meso-network:
+    driver: bridge

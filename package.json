@@ -1,0 +1,10 @@
+{
+    "name": "mess-manager",
+    "private": true,
+    "version": "1.0.0",
+    "scripts": {
+        "predev": "pnpm --filter ./server run prisma:generate",
+        "dev": "pnpm -r --parallel --stream --filter ./client --filter ./server run dev",
+        "session:debug": "pnpm --filter ./client run session:debug"
+    }
+}

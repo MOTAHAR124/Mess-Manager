@@ -1,0 +1,280 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ============== Users ==============
+model User {
+  id            String    @id @default(cuid())
+  email         String    @unique
+  firstName     String
+  lastName      String
+  passwordHash  String?
+  rawPass       String?
+  profilePicture String?
+  isVerified    Boolean   @default(false)
+  lastLogin     DateTime?
+  phone         String?
+  address       String?
+
+  // OAuth
+  googleId      String?   @unique
+  googleProfile Json?     @db.Json
+
+  // Relations
+  messes        Mess[]
+  deposits      Deposit[]
+  messMembers   MessMember[]
+  meals         Meal[]
+  costDist      CostDistribution[]
+
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  @@index([googleId])
+  @@index([email])
+}
+
+// ============== Mess (Shared Living Group) ==============
+model Mess {
+  id        String   @id @default(cuid())
+  name      String
+  managerId String
+  manager   User     @relation(fields: [managerId], references: [id], onDelete: Cascade)
+  
+  // Current Status
+  activeMonthId String?  @unique
+  activeMonth   Month?   @relation("ActiveMonth", fields: [activeMonthId], references: [id])
+  
+  // Relations
+  members   MessMember[]
+  months    Month[]      @relation("MessMonths")
+  meals     Meal[]
+  costs     Cost[]
+  deposits  Deposit[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([managerId])
+  @@index([activeMonthId])
+}
+
+// ============== Mess Members ==============
+model MessMember {
+  id        String   @id @default(cuid())
+  messId    String
+  mess      Mess     @relation(fields: [messId], references: [id], onDelete: Cascade)
+  
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  role      Role     @default(MEMBER)
+  status    MemberStatus @default(ACTIVE)
+  
+  // Bazar Dates
+  bazarDates BazarDate[]
+
+  joinedAt  DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([messId, userId])
+  @@index([messId])
+  @@index([userId])
+}
+
+enum Role {
+  MANAGER
+  MEMBER
+}
+
+enum MemberStatus {
+  ACTIVE
+  INACTIVE
+  REMOVED
+}
+
+// ============== Months ==============
+model Month {
+  id        String   @id @default(cuid())
+  messId    String
+  mess      Mess     @relation("MessMonths", fields: [messId], references: [id], onDelete: Cascade)
+  
+  name      String
+  status    MonthStatus @default(ACTIVE)
+  startDate DateTime
+  endDate   DateTime
+  
+  // Relations
+  meals     Meal[]
+  costs     Cost[]
+  deposits  Deposit[]
+  settlement Settlement?
+  bazarDates BazarDate[]
+  
+  // Active Month Reference
+  messAsActive Mess? @relation("ActiveMonth")
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([messId, name])
+  @@index([messId])
+  @@index([status])
+}
+
+enum MonthStatus {
+  ACTIVE
+  COMPLETED
+  ARCHIVED
+}
+
+// ============== Meals ==============
+model Meal {
+  id        String   @id @default(cuid())
+  monthId   String
+  month     Month    @relation(fields: [monthId], references: [id], onDelete: Cascade)
+  
+  messId    String
+  mess      Mess     @relation(fields: [messId], references: [id], onDelete: Cascade)
+  
+  memberId  String
+  member    User     @relation(fields: [memberId], references: [id], onDelete: Cascade)
+  
+  date      DateTime
+  breakfast Float    @default(0)
+  lunch     Float    @default(0)
+  dinner    Float    @default(0)
+  
+  // Cost breakdown
+  details   String?  // JSON stringified details
+  
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([monthId, date, memberId])
+  @@index([monthId])
+  @@index([messId])
+  @@index([memberId])
+  @@index([date])
+}
+
+// ============== Costs ==============
+model Cost {
+  id        String   @id @default(cuid())
+  monthId   String
+  month     Month    @relation(fields: [monthId], references: [id], onDelete: Cascade)
+  
+  messId    String
+  mess      Mess     @relation(fields: [messId], references: [id], onDelete: Cascade)
+  
+  name      String   // e.g., "Khala Bill", "WiFi", "Gas"
+  amount    Float
+  type      CostType // INDIVIDUAL or SHARED
+  
+  // For individual costs
+  memberId  String?
+  
+  // Distribution
+  distribution CostDistribution[]
+  
+  details   String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([monthId])
+  @@index([messId])
+  @@index([type])
+}
+
+enum CostType {
+  INDIVIDUAL  // Cost for single member
+  SHARED      // Cost split among members
+}
+
+// ============== Cost Distribution ==============
+model CostDistribution {
+  id        String   @id @default(cuid())
+  costId    String
+  cost      Cost     @relation(fields: [costId], references: [id], onDelete: Cascade)
+  
+  memberId  String
+  member    User     @relation(fields: [memberId], references: [id], onDelete: Cascade)
+  
+  amount    Float
+  
+  createdAt DateTime @default(now())
+
+  @@unique([costId, memberId])
+  @@index([costId])
+  @@index([memberId])
+}
+
+// ============== Deposits ==============
+model Deposit {
+  id        String   @id @default(cuid())
+  monthId   String
+  month     Month    @relation(fields: [monthId], references: [id], onDelete: Cascade)
+  
+  messId    String
+  mess      Mess     @relation(fields: [messId], references: [id], onDelete: Cascade)
+  
+  memberId  String
+  member    User     @relation(fields: [memberId], references: [id], onDelete: Cascade)
+  
+  amount    Float
+  date      DateTime
+  details   String?  // Optional note
+  
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([monthId])
+  @@index([memberId])
+  @@index([date])
+}
+
+// ============== Settlement ==============
+model Settlement {
+  id        String   @id @default(cuid())
+  monthId   String   @unique
+  month     Month    @relation(fields: [monthId], references: [id], onDelete: Cascade)
+  
+  // Summary data (JSON)
+  memberBalances String  // JSON: { memberId: balance }
+  totalMeals     Float   @default(0)
+  mealRate       Float   @default(0)
+  totalMealCost  Float
+  totalDeposit   Float
+  totalCost      Float
+  
+  settledAt DateTime?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([monthId])
+}
+
+// ============== Bazar Dates ==============
+model BazarDate {
+  id        String   @id @default(cuid())
+  monthId   String
+  month     Month    @relation(fields: [monthId], references: [id], onDelete: Cascade)
+  
+  date      DateTime
+  memberId  String
+  member    MessMember @relation(fields: [memberId], references: [id], onDelete: Cascade)
+  
+  createdAt DateTime @default(now())
+
+  @@unique([monthId, date])
+  @@index([monthId])
+  @@index([memberId])
+}
