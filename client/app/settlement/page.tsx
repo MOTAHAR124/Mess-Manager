@@ -97,15 +97,15 @@ export default function SettlementPage() {
         </div>
         <div className="card p-4">
           <p className="text-xs font-bold uppercase text-slate-500">Meal Rate</p>
-          <p className="mt-2 text-2xl font-extrabold">BDT {(settlement?.mealRate ?? 0).toFixed(4)}</p>
+          <p className="mt-2 text-2xl font-extrabold">INR {(settlement?.mealRate ?? 0).toFixed(4)}</p>
         </div>
         <div className="card p-4">
           <p className="text-xs font-bold uppercase text-slate-500">Total Expense</p>
-          <p className="mt-2 text-2xl font-extrabold">BDT {(settlement?.totalCost ?? 0).toFixed(2)}</p>
+          <p className="mt-2 text-2xl font-extrabold">INR {(settlement?.totalCost ?? 0).toFixed(2)}</p>
         </div>
         <div className="card p-4">
           <p className="text-xs font-bold uppercase text-slate-500">Total Deposit</p>
-          <p className="mt-2 text-2xl font-extrabold">BDT {(settlement?.totalDeposit ?? 0).toFixed(2)}</p>
+          <p className="mt-2 text-2xl font-extrabold">INR {(settlement?.totalDeposit ?? 0).toFixed(2)}</p>
         </div>
       </div>
 
@@ -125,10 +125,10 @@ export default function SettlementPage() {
               <tr key={memberId}>
                 <td className="px-4 py-3 font-medium text-slate-700">{memberNameMap.get(memberId) || memberId}</td>
                 <td className="px-4 py-3 text-right">{toNumber(row?.meals).toFixed(2)}</td>
-                <td className="px-4 py-3 text-right">BDT {toNumber(row?.cost).toFixed(2)}</td>
-                <td className="px-4 py-3 text-right">BDT {toNumber(row?.deposit).toFixed(2)}</td>
+                <td className="px-4 py-3 text-right">INR {toNumber(row?.cost).toFixed(2)}</td>
+                <td className="px-4 py-3 text-right">INR {toNumber(row?.deposit).toFixed(2)}</td>
                 <td className={`px-4 py-3 text-right font-bold ${toNumber(row?.balance) >= 0 ? "text-emerald-700" : "text-rose-700"}`}>
-                  BDT {toNumber(row?.balance).toFixed(2)}
+                  INR {toNumber(row?.balance).toFixed(2)}
                 </td>
               </tr>
             ))}

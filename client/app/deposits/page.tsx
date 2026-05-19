@@ -167,7 +167,7 @@ export default function DepositsPage() {
                 <td className="px-4 py-3">{new Date(deposit.date).toLocaleDateString()}</td>
                 <td className="px-4 py-3 font-medium text-slate-700">{memberNameMap.get(deposit.memberId) || deposit.memberId}</td>
                 <td className="px-4 py-3 text-slate-600">{deposit.details || "-"}</td>
-                <td className="px-4 py-3 text-right font-bold text-slate-900">BDT {deposit.amount.toFixed(2)}</td>
+                <td className="px-4 py-3 text-right font-bold text-slate-900">INR {deposit.amount.toFixed(2)}</td>
                 <td className="px-4 py-3 text-right space-x-2">
                   <button onClick={() => onEdit(deposit)} className="rounded-md bg-sky-100 px-2 py-1 text-xs font-bold text-sky-700">Edit</button>
                   <button onClick={() => void onDelete(deposit.id)} className="rounded-md bg-rose-100 px-2 py-1 text-xs font-bold text-rose-700">Delete</button>

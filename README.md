@@ -189,6 +189,3 @@ pnpm dev
 ## License
 
 Private project. All rights reserved.
-
-
-

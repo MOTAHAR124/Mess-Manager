@@ -28,6 +28,7 @@ export type AuthPayload = {
     email: string;
     firstName: string;
     lastName: string;
+    authRole?: "MEMBER" | "MANAGER";
     isVerified: boolean;
     hasActiveMonth: boolean;
     createdAt: string;
@@ -280,6 +281,24 @@ export async function login(payload: { email: string; password: string }) {
     method: "POST",
     body: JSON.stringify(payload),
   });
+}
+
+export async function managerLogin(payload: { email: string; password: string }) {
+  const response = await fetch("/api/auth/manager-login", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload),
+    cache: "no-store",
+  });
+  const raw = (await response.json().catch(() => ({}))) as ApiEnvelope<AuthPayload> | AuthPayload;
+  return unwrapApiResponse<AuthPayload>(response, raw);
+}
+
+export async function clearManagerSession() {
+  await fetch("/api/auth/manager-logout", {
+    method: "POST",
+    cache: "no-store",
+  }).catch(() => undefined);
 }
 
 export async function register(payload: {

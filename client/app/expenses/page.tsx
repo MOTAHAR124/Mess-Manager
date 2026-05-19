@@ -194,7 +194,7 @@ export default function ExpensesPage() {
                 <td className="px-4 py-3 font-medium text-slate-700">{expense.name}</td>
                 <td className="px-4 py-3 text-slate-600">{expense.type}</td>
                 <td className="px-4 py-3 text-slate-600">{expense.memberId ? memberNameMap.get(expense.memberId) || expense.memberId : "ALL"}</td>
-                <td className="px-4 py-3 text-right font-bold text-slate-900">BDT {expense.amount.toFixed(2)}</td>
+                <td className="px-4 py-3 text-right font-bold text-slate-900">INR {expense.amount.toFixed(2)}</td>
                 <td className="px-4 py-3 text-right space-x-2">
                   <button
                     onClick={() => onEdit(expense)}

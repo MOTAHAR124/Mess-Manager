@@ -2,6 +2,8 @@ import { PrismaClient } from '@prisma/client';
 import * as bcrypt from 'bcryptjs';
 
 const prisma = new PrismaClient();
+const managerEmail = process.env.NEXT_PUBLIC_MANAGER_EMAIL || process.env.MANAGER_EMAIL || 'xyz@gmail.com';
+const managerPassword = process.env.MANAGER_PASSWORD || '12345678';
 
 /**
  * Database Seed Script
@@ -33,10 +35,10 @@ async function main() {
   console.log('Creating test users...');
   const managerUser = await prisma.user.create({
     data: {
-      email: 'manager@test.com',
+      email: managerEmail,
       firstName: 'Manager',
       lastName: 'Test',
-      passwordHash: await bcrypt.hash('password123', 10),
+      passwordHash: await bcrypt.hash(managerPassword, 10),
       isVerified: true,
     },
   });
@@ -281,8 +283,8 @@ async function main() {
   console.log('\nTest Credentials:');
   console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
   console.log('Manager:');
-  console.log('  Email: manager@test.com');
-  console.log('  Password: password123');
+  console.log(`  Email: ${managerEmail}`);
+  console.log(`  Password: ${managerPassword}`);
   console.log('');
   console.log('Member:');
   console.log('  Email: member@test.com');

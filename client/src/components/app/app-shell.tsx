@@ -19,7 +19,7 @@ import {
 } from "lucide-react";
 import { clearAuthSession, getStoredUser } from "@/lib/auth-session";
 import { listenRuntimeChange, getAuthToken, getRuntimeConfig } from "@/lib/runtime-config";
-import { logout } from "@/lib/next-api";
+import { clearManagerSession, logout } from "@/lib/next-api";
 
 const PUBLIC_PATHS = new Set([
   "/",
@@ -36,7 +36,7 @@ const navItems = [
   { label: "Deposits", path: "/deposits", icon: Wallet },
   { label: "Expenses", path: "/expenses", icon: Receipt },
   { label: "Settlement", path: "/settlement", icon: Calculator },
-  { label: "Members", path: "/profile", icon: Users },
+  { label: "Members", path: "/members", icon: Users },
   { label: "Profile Settings", path: "/profile", icon: UserIcon },
 ];
 
@@ -49,6 +49,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   const [displayName, setDisplayName] = useState("User");
   const [email, setEmail] = useState("");
   const [monthId, setMonthId] = useState("");
+  const [isManager, setIsManager] = useState(false);
 
   useEffect(() => {
     const hydrate = () => {
@@ -57,6 +58,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
       setToken(getAuthToken());
       setDisplayName(user ? `${user.firstName} ${user.lastName}`.trim() : "User");
       setEmail(user?.email || "");
+      setIsManager(user?.authRole === "MANAGER");
       setMonthId(config.monthId || "No active month");
     };
 
@@ -80,6 +82,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
     } catch {
       // fall through and clear local session regardless
     }
+    await clearManagerSession();
     clearAuthSession();
     router.push("/login");
   };
@@ -111,7 +114,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           </div>
 
           <ul className="space-y-1">
-            {navItems.map((item) => {
+            {navItems.filter((item) => isManager || item.path !== "/dashboard").map((item) => {
               const Icon = item.icon;
               const isActive = pathname === item.path;
 
@@ -135,13 +138,15 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           </ul>
 
           <div className="mt-8 space-y-2">
-            <Link
-              href="/dashboard"
-              className="flex w-full items-center gap-3 rounded-xl border border-gray-100 bg-white px-4 py-2.5 text-sm font-medium text-gray-600 transition-colors hover:bg-gray-50 hover:text-gray-900"
-            >
-              <LayoutDashboard size={18} className="text-gray-400" />
-              Open Dashboard
-            </Link>
+            {isManager && (
+              <Link
+                href="/dashboard"
+                className="flex w-full items-center gap-3 rounded-xl border border-gray-100 bg-white px-4 py-2.5 text-sm font-medium text-gray-600 transition-colors hover:bg-gray-50 hover:text-gray-900"
+              >
+                <LayoutDashboard size={18} className="text-gray-400" />
+                Open Dashboard
+              </Link>
+            )}
             <Link
               href="/settlement"
               className="flex w-full items-center gap-3 rounded-xl border border-gray-100 bg-white px-4 py-2.5 text-sm font-medium text-gray-600 transition-colors hover:bg-gray-50 hover:text-gray-900"
@@ -188,23 +193,28 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           <div className="flex flex-1 justify-center lg:justify-start">
             <div className="flex items-center gap-1.5 rounded-xl border border-gray-100 bg-gray-50 p-1">
               {[
-                { icon: LayoutDashboard, path: "/dashboard" },
-                { icon: CalendarDays, path: "/settlement" },
-                { icon: Users, path: "/profile" },
-                { icon: Calculator, path: "/settlement" },
-                { icon: UserIcon, path: "/profile" },
-              ].map((item, idx) => {
+                { label: "Dashboard", icon: LayoutDashboard, path: "/dashboard" },
+                { label: "Calendar", icon: CalendarDays, path: "/settlement" },
+                { label: "Members", icon: Users, path: "/members" },
+                { label: "Settlement", icon: Calculator, path: "/settlement" },
+                { label: "Profile", icon: UserIcon, path: "/profile" },
+              ].filter((item) => isManager || item.path !== "/dashboard").map((item, idx) => {
                 const Icon = item.icon;
                 const isPathActive = pathname === item.path;
                 return (
                   <Link
                     key={`${item.path}-${idx}`}
                     href={item.path}
-                    className={`rounded-lg p-1.5 transition-all ${
+                    aria-label={item.label}
+                    title={item.label}
+                    className={`group relative rounded-lg p-1.5 transition-all ${
                       isPathActive ? "bg-white text-red-600 shadow-sm" : "text-gray-400 hover:text-gray-900"
                     }`}
                   >
                     <Icon size={18} />
+                    <span className="pointer-events-none absolute left-1/2 top-full z-30 mt-2 -translate-x-1/2 whitespace-nowrap rounded-md bg-gray-900 px-2 py-1 text-[11px] font-semibold text-white opacity-0 shadow-lg transition-opacity duration-150 group-hover:opacity-100 group-focus-visible:opacity-100">
+                      {item.label}
+                    </span>
                   </Link>
                 );
               })}
